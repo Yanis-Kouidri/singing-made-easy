@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Singing Made Easy</title>
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>Singing Made Easy</h1>
+        <p class="subtitle">Exercice : tenir une note</p>
+      </header>
+
+      <section class="card settings">
+        <div class="voice-row">
+          <label class="field">
+            <span class="label">Ta voix</span>
+            <select id="voice"></select>
+          </label>
+          <div class="field">
+            <span class="label">Zone de travail</span>
+            <span id="range-text" class="range-text">–</span>
+          </div>
+        </div>
+        <button id="range-test" class="link-btn">🎤 Je ne sais pas : faire le test de ma tessiture</button>
+
+        <div class="target">
+          <span class="label">Note à chanter</span>
+          <div class="note-picker">
+            <button id="note-down" class="icon-btn" aria-label="Note plus grave">−</button>
+            <div class="note-display">
+              <span id="note-fr" class="note-fr">Do</span>
+              <span id="note-detail" class="note-detail">C3 · 130,8 Hz</span>
+            </div>
+            <button id="note-up" class="icon-btn" aria-label="Note plus aiguë">+</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span class="label">Tolérance</span>
+            <select id="tolerance">
+              <option value="50">Débutant (±50 cents)</option>
+              <option value="25">Intermédiaire (±25 cents)</option>
+              <option value="10">Avancé (±10 cents)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span class="label">Durée à tenir</span>
+            <select id="goal">
+              <option value="3">3 secondes</option>
+              <option value="5">5 secondes</option>
+              <option value="8">8 secondes</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="start" class="btn primary">Commencer</button>
+          <button id="listen" class="btn secondary">🔊 Écouter la note</button>
+          <button id="other-note" class="btn secondary">🎲 Autre note</button>
+        </div>
+      </section>
+
+      <section class="card live">
+        <div class="feedback">
+          <div id="hint" class="hint">Clique sur « Commencer » pour activer le micro.</div>
+          <div class="readout">
+            <span id="sung-note" class="sung-note">–</span>
+            <span id="cents" class="cents"></span>
+          </div>
+        </div>
+
+        <canvas id="graph" class="graph" aria-label="Courbe de ta voix par rapport à la note cible"></canvas>
+
+        <div class="meters">
+          <div class="progress-wrap">
+            <span class="label">Progression</span>
+            <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+            <span id="progress-text" class="progress-text">0,0 / 3 s</span>
+          </div>
+          <div class="mic-wrap" title="Niveau du micro">
+            <span class="label">Micro</span>
+            <div class="mic-level"><div id="mic-bar" class="mic-bar"></div></div>
+          </div>
+        </div>
+
+        <div id="result" class="result" hidden>
+          <p id="result-title" class="result-title"></p>
+          <dl class="stats">
+            <div><dt>Justesse</dt><dd id="stat-accuracy"></dd></div>
+            <div><dt>Écart moyen</dt><dd id="stat-deviation"></dd></div>
+            <div><dt>Meilleure tenue</dt><dd id="stat-streak"></dd></div>
+          </dl>
+          <div class="actions">
+            <button id="retry" class="btn secondary">Recommencer</button>
+            <button id="next" class="btn primary">Note suivante</button>
+          </div>
+        </div>
+      </section>
+
+      <details class="card tips">
+        <summary>Conseils pour bien débuter</summary>
+        <ul>
+          <li>Utilise un <strong>casque</strong> si possible : sinon le micro entend la note de référence.</li>
+          <li>Chante sur une voyelle ouverte et confortable : « a », « o » ou « ou ».</li>
+          <li>Prends une inspiration calme avant de chanter, et ne force pas.</li>
+          <li>Si tu es trop bas, pense « monter » sans pousser plus fort : la hauteur n'est pas le volume.</li>
+          <li>Une note juste à une autre octave compte : les voix graves peuvent chanter une octave en dessous.</li>
+        </ul>
+      </details>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
