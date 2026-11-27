@@ -1,0 +1,20 @@
+# Dependabot ouvre des pull requests pour garder à jour :
+# - les actions du workflow de déploiement ;
+# - les dépendances npm du projet.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      npm:
+        patterns: ['*']
