@@ -1,3 +1,5 @@
+import { execSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 // The fake microphone sings a steady G2 (see playwright.config.ts).
@@ -54,6 +56,15 @@ test('holding the target note completes the exercise', async ({ page }) => {
   await next.click();
   await expect(page.locator('#note-detail')).toContainText('G♯2');
   await expect(page.locator('#start')).toHaveText('Arrêter');
+});
+
+test('shows the built version and commit in the footer', async ({ page }) => {
+  const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
+  const sha = process.env.GITHUB_SHA ?? execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+
+  const link = page.locator('#version');
+  await expect(link).toHaveText(`v${version} · ${sha.slice(0, 7)}`);
+  await expect(link).toHaveAttribute('href', `https://github.com/Yanis-Kouidri/singing-made-easy/commit/${sha}`);
 });
 
 test('migrates voice ids saved by earlier versions', async ({ page }) => {

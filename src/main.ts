@@ -4,6 +4,7 @@ import { PitchGraph } from './graph';
 import { centsFromTarget, freqToMidi, midiToFreq, noteName } from './music';
 import { PitchTracker } from './pitch';
 import { playNote } from './tone';
+import { versionInfo } from './version';
 import {
   VOICE_TYPES,
   clampToRange,
@@ -44,6 +45,7 @@ const ui = {
   statStreak: $('stat-streak'),
   retry: $<HTMLButtonElement>('retry'),
   next: $<HTMLButtonElement>('next'),
+  version: $<HTMLAnchorElement>('version'),
 };
 
 // ---------- Settings (persisted in the browser) ----------
@@ -404,5 +406,9 @@ ui.next.addEventListener('click', () => {
   setTarget(nextNoteUp());
   void startExercise();
 });
+
+const version = versionInfo(__APP_VERSION__, __COMMIT_SHA__);
+ui.version.textContent = version.label;
+ui.version.href = version.url;
 
 render();
