@@ -36,3 +36,7 @@ Stack : [Vite](https://vite.dev) + TypeScript, sans framework. La détection de 
 ## Déploiement
 
 Chaque push sur `main` lance le workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), qui builde l'app et la publie sur GitHub Pages.
+
+## Licence
+
+Distribué sous licence [MIT](LICENSE) : tu peux réutiliser, modifier et redistribuer ce code librement, à condition de conserver la mention de copyright.
