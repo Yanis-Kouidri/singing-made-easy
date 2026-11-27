@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 import { TONE_G2, fakeMicArgs } from './e2e/audio';
 
 const PORT = 4173;
-const BASE_URL = `http://localhost:${PORT}/singing-made-easy/`;
+// An explicit IPv4 address: "localhost" may resolve to ::1 first, which the
+// preview server does not listen on, and Playwright then waits for minutes.
+const HOST = '127.0.0.1';
+const BASE_URL = `http://${HOST}:${PORT}/singing-made-easy/`;
 const CI = !!process.env.CI;
 
 export default defineConfig({
@@ -27,7 +30,7 @@ export default defineConfig({
   // Test the production build, served under the GitHub Pages base path.
   // Always rebuild: reusing a running server would test a stale build.
   webServer: {
-    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
+    command: `npm run build && npm run preview -- --host ${HOST} --port ${PORT} --strictPort`,
     url: BASE_URL,
     reuseExistingServer: false,
   },
