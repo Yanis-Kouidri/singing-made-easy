@@ -1,6 +1,6 @@
-# Dependabot ouvre des pull requests pour garder à jour :
-# - les actions du workflow de déploiement ;
-# - les dépendances npm du projet.
+# Dependabot opens pull requests to keep up to date:
+# - the actions used by the deployment workflow;
+# - the project's npm dependencies.
 version: 2
 updates:
   - package-ecosystem: github-actions
