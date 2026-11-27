@@ -23,6 +23,7 @@
 
 ## Verifying changes
 
-No automated tests yet. `npm run build` must pass; check changes in the browser.
-For audio, Chromium can fake a microphone with `--use-fake-device-for-media-stream`
-and `--use-file-for-fake-audio-capture=<tone.wav>`.
+- `npm test` — Vitest unit tests (`src/**/*.test.ts`) for the pure logic.
+- `npm run test:e2e` — Playwright tests (`e2e/`) on the production build, in
+  Chromium with a fake microphone fed by generated WAV tones (`e2e/audio.ts`).
+- Add or update tests with each change; CI runs both and blocks deployment on failure.

@@ -31,13 +31,17 @@ npm install
 npm run dev      # dev server on http://localhost:5173
 npm run build    # production build in dist/
 npm run preview  # serve the production build locally
+npm test         # unit tests (Vitest)
+npm run test:e2e # end-to-end tests (Playwright, Chromium)
 ```
+
+Before the first end-to-end run, install the browser with `npx playwright install chromium`. The end-to-end tests replace the microphone with generated audio tones, so they need no real microphone.
 
 Stack: [Vite](https://vite.dev) + TypeScript, no framework. Pitch detection uses [pitchy](https://github.com/ianprime0509/pitchy) (McLeod Pitch Method).
 
 ## Deployment
 
-Every push to `main` runs the [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) workflow, which builds the app and publishes it to GitHub Pages.
+The [`.github/workflows/ci.yml`](.github/workflows/ci.yml) workflow runs the tests on every push and pull request. On `main`, once they pass, it builds the app and publishes it to GitHub Pages.
 
 ## Contributing
 
