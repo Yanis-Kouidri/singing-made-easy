@@ -1,42 +1,48 @@
 # Singing Made Easy
 
-Une app web pour apprendre à chanter juste. Elle joue une note, écoute ta voix au micro et te montre en temps réel si tu es trop haut, trop bas ou juste.
+A web app to learn to sing in tune. It plays a note, listens to your voice through the microphone and shows you in real time whether you are too high, too low or spot on.
 
-**👉 Essayer : https://yanis-kouidri.github.io/singing-made-easy/**
+**👉 Try it: https://yanis-kouidri.github.io/singing-made-easy/**
 
-## Fonctionnalités
+> The app's interface is in French.
 
-- **Exercice « tenir une note »** : l'app joue la note, tu la chantes et la tiens quelques secondes dans la zone de justesse.
-- **Retour en direct** : courbe de ta voix face à la note cible, écart en cents (100 cents = 1 demi-ton) et indication du sens dans lequel corriger.
-- **Catégories de voix** (de basse à soprano) et **test de tessiture** pour travailler dans une zone confortable.
-- **Progression du grave vers l'aigu**, choix manuel de la note ou note au hasard.
-- **Tolérance réglable** (±50, ±25 ou ±10 cents) et durée à tenir.
+## Features
 
-Tout se passe dans le navigateur : aucun son n'est enregistré ni envoyé sur Internet.
+- **"Hold a note" exercise**: the app plays a note, you sing it and hold it within the in-tune zone for a few seconds.
+- **Live feedback**: a scrolling chart of your voice against the target note, the distance in cents (100 cents = 1 semitone) and which way to correct.
+- **Voice types** (bass to soprano) and a **range test** to practise within a comfortable range.
+- **Low-to-high progression**, manual note selection or a random note.
+- **Adjustable tolerance** (±50, ±25 or ±10 cents) and hold duration.
 
-## Conseils d'utilisation
+Everything runs in the browser: no audio is recorded or sent over the Internet.
 
-- Utilise un navigateur récent (Chrome, Edge, Firefox ou Safari) et autorise l'accès au micro.
-- Un casque est conseillé, pour que le micro n'entende pas la note de référence.
-- Les notes de référence suivent le standard La = 440 Hz.
+## Tips
 
-## Développement
+- Use a recent browser (Chrome, Edge, Firefox or Safari) and allow microphone access.
+- Headphones are recommended, so the microphone does not pick up the reference note.
+- Reference notes use standard tuning (A = 440 Hz).
 
-Prérequis : Node 24 (voir `.node-version`).
+## Development
+
+Requires Node 24 (see `.node-version`).
 
 ```bash
 npm install
-npm run dev      # serveur de développement sur http://localhost:5173
-npm run build    # build de production dans dist/
-npm run preview  # sert le build localement
+npm run dev      # dev server on http://localhost:5173
+npm run build    # production build in dist/
+npm run preview  # serve the production build locally
 ```
 
-Stack : [Vite](https://vite.dev) + TypeScript, sans framework. La détection de hauteur utilise [pitchy](https://github.com/ianprime0509/pitchy) (algorithme McLeod).
+Stack: [Vite](https://vite.dev) + TypeScript, no framework. Pitch detection uses [pitchy](https://github.com/ianprime0509/pitchy) (McLeod Pitch Method).
 
-## Déploiement
+## Deployment
 
-Chaque push sur `main` lance le workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), qui builde l'app et la publie sur GitHub Pages.
+Every push to `main` runs the [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) workflow, which builds the app and publishes it to GitHub Pages.
 
-## Licence
+## Contributing
 
-Distribué sous licence [MIT](LICENSE) : tu peux réutiliser, modifier et redistribuer ce code librement, à condition de conserver la mention de copyright.
+Code, comments and commit messages are written in English. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`…).
+
+## License
+
+Released under the [MIT License](LICENSE): you may reuse, modify and redistribute this code freely, as long as you keep the copyright notice.
