@@ -23,7 +23,7 @@ const ui = {
   rangeTest: $<HTMLButtonElement>('range-test'),
   noteDown: $<HTMLButtonElement>('note-down'),
   noteUp: $<HTMLButtonElement>('note-up'),
-  noteFr: $('note-fr'),
+  noteName: $('note-name'),
   noteDetail: $('note-detail'),
   tolerance: $<HTMLSelectElement>('tolerance'),
   goal: $<HTMLSelectElement>('goal'),
@@ -46,10 +46,10 @@ const ui = {
   next: $<HTMLButtonElement>('next'),
 };
 
-// ---------- Réglages (mémorisés dans le navigateur) ----------
+// ---------- Settings (persisted in the browser) ----------
 
 interface Settings {
-  /** Id d'une catégorie de VOICE_TYPES, ou 'custom' pour la zone mesurée. */
+  /** Id of one of VOICE_TYPES, or 'custom' for the measured range. */
   voice: string;
   customRange: Range | null;
   targetMidi: number;
@@ -58,15 +58,20 @@ interface Settings {
 }
 
 const CUSTOM = 'custom';
+const STORAGE_KEY = 'sme-settings';
+/** Voice ids used by earlier versions, mapped to the current ones. */
+const LEGACY_VOICE_IDS: Record<string, string> = { basse: 'bass', baryton: 'baritone' };
 
 function loadSettings(): Settings {
-  const defaults: Settings = { voice: 'basse', customRange: null, targetMidi: 0, tolerance: 50, goal: 3 };
+  const defaults: Settings = { voice: 'bass', customRange: null, targetMidi: 0, tolerance: 50, goal: 3 };
   let s = defaults;
   try {
-    s = { ...defaults, ...JSON.parse(localStorage.getItem('sme-settings') ?? '{}') };
+    s = { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') };
   } catch {
-    // Données illisibles : on repart des valeurs par défaut.
+    // Unreadable data: fall back to the defaults.
   }
+  s.voice = LEGACY_VOICE_IDS[s.voice] ?? s.voice;
+  if (s.voice !== CUSTOM && !VOICE_TYPES.some((v) => v.id === s.voice)) s.voice = defaults.voice;
   const r = rangeFor(s);
   if (s.targetMidi < r.low || s.targetMidi > r.high) s.targetMidi = r.low;
   return s;
@@ -74,9 +79,9 @@ function loadSettings(): Settings {
 
 function saveSettings(): void {
   try {
-    localStorage.setItem('sme-settings', JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch {
-    // Stockage indisponible (navigation privée…) : pas grave.
+    // Storage unavailable (private browsing…): not a problem.
   }
 }
 
@@ -85,7 +90,7 @@ function rangeFor(s: Settings): Range {
   return VOICE_TYPES.find((v) => v.id === s.voice) ?? VOICE_TYPES[0];
 }
 
-// ---------- État ----------
+// ---------- State ----------
 
 const settings = loadSettings();
 let mode: Mode = 'idle';
@@ -95,16 +100,18 @@ let exercise: HoldExercise | null = null;
 let referencePlaying = false;
 let lastFrame = 0;
 
-/** Test de tessiture : mesures en cours et note grave retenue. */
-const TEST_SAMPLES = 90; // ≈ 1,5 s de voix à 60 images/s
+/** Range test: readings in progress and the low note found. */
+const TEST_SAMPLES = 90; // ≈ 1.5 s of voice at 60 frames/s
 let testSamples: number[] = [];
 let testLow = 0;
 let testIgnoreUntil = 0;
 
 const graph = new PitchGraph(ui.graph);
-const fmt = (n: number, digits = 1) =>
+/** Formats a number for the French UI, e.g. "1,5". */
+const formatNumber = (n: number, digits = 1) =>
   n.toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-const isBusy = () => mode === 'reference' || mode === 'singing' || mode === 'test-low' || mode === 'test-high';
+const isTesting = () => mode === 'test-low' || mode === 'test-high';
+const isBusy = () => mode === 'reference' || mode === 'singing' || isTesting();
 
 // ---------- Audio ----------
 
@@ -133,7 +140,7 @@ async function playReference(): Promise<void> {
   render();
 }
 
-// ---------- Déroulé de l'exercice ----------
+// ---------- Exercise flow ----------
 
 async function startExercise(): Promise<void> {
   if (!(await ensureAudio(true))) return;
@@ -150,7 +157,7 @@ function stopAll(): void {
   setHint('Arrêté. Clique sur « Commencer » quand tu es prêt.');
 }
 
-/** Change la note à chanter, toujours dans la zone de la voix choisie. */
+/** Changes the note to sing, always within the selected voice range. */
 function setTarget(midi: number): void {
   settings.targetMidi = clampToRange(rangeFor(settings), midi);
   saveSettings();
@@ -158,15 +165,15 @@ function setTarget(midi: number): void {
 }
 
 /**
- * Progression du grave vers l'aigu, un demi-ton à la fois. Arrivé en
- * haut de la zone, on repart de la note la plus grave.
+ * Low-to-high progression, one semitone at a time. After the top of the
+ * range, start again from the lowest note.
  */
 function nextNoteUp(): number {
   const r = rangeFor(settings);
   return settings.targetMidi >= r.high ? r.low : settings.targetMidi + 1;
 }
 
-// ---------- Test de tessiture ----------
+// ---------- Range test ----------
 
 async function startRangeTest(): Promise<void> {
   if (!(await ensureAudio(true))) return;
@@ -179,7 +186,7 @@ async function startRangeTest(): Promise<void> {
 function collectTestSample(t: number, freq: number | null): void {
   if (!freq || t < testIgnoreUntil) return;
   const midi = freqToMidi(freq);
-  // Pour la note aiguë, on ignore ce qui ressemble encore à la note grave.
+  // For the high note, ignore anything that still sounds like the low one.
   if (mode === 'test-high' && midi < testLow + 3) return;
 
   testSamples.push(midi);
@@ -188,7 +195,7 @@ function collectTestSample(t: number, freq: number | null): void {
   if (mode === 'test-low') {
     testLow = median(testSamples);
     testSamples = [];
-    testIgnoreUntil = t + 1; // laisse le temps de reprendre son souffle
+    testIgnoreUntil = t + 1; // give the singer time to take a breath
     setMode('test-high');
   } else {
     finishRangeTest(testLow, median(testSamples));
@@ -203,7 +210,7 @@ function finishRangeTest(lowMidi: number, highMidi: number): void {
     setHint('Les deux notes étaient trop proches. Relance le test en allant un peu plus loin.', 'warn');
     return;
   }
-  // Sur une zone assez large, on garde un demi-ton de marge de chaque côté.
+  // On a wide enough range, keep a semitone of margin on each side.
   const margin = high - low >= 9 ? 1 : 0;
   settings.customRange = { low: low + margin, high: high - margin };
   settings.voice = CUSTOM;
@@ -227,7 +234,7 @@ function setMode(next: Mode): void {
   render();
 }
 
-// ---------- Boucle temps réel ----------
+// ---------- Real-time loop ----------
 
 function loop(now: number): void {
   const dt = Math.min(0.1, (now - lastFrame) / 1000);
@@ -238,10 +245,10 @@ function loop(now: number): void {
   const t = now / 1000;
   const cents = freq ? centsFromTarget(freq, settings.targetMidi, true) : null;
 
-  // Pendant la note de référence, le micro peut l'entendre : on ignore.
+  // The microphone may pick up the reference note: ignore it while it plays.
   const listening = !referencePlaying;
 
-  if ((mode === 'test-low' || mode === 'test-high') && listening) collectTestSample(t, freq);
+  if (isTesting() && listening) collectTestSample(t, freq);
 
   if (mode === 'singing' && listening && exercise) {
     exercise.update(dt, cents);
@@ -255,7 +262,7 @@ function loop(now: number): void {
   requestAnimationFrame(loop);
 }
 
-// ---------- Affichage ----------
+// ---------- Rendering ----------
 
 function renderVoiceOptions(): void {
   const options = VOICE_TYPES.map((v) => new Option(`${v.label} (${formatRange(v)})`, v.id));
@@ -271,8 +278,8 @@ function render(): void {
   ui.rangeText.textContent = formatRange(rangeFor(settings));
 
   const target = noteName(settings.targetMidi);
-  ui.noteFr.textContent = target.fr;
-  ui.noteDetail.textContent = `${target.sci} · ${fmt(midiToFreq(settings.targetMidi))} Hz`;
+  ui.noteName.textContent = target.solfege;
+  ui.noteDetail.textContent = `${target.scientific} · ${formatNumber(midiToFreq(settings.targetMidi))} Hz`;
   ui.tolerance.value = String(settings.tolerance);
   ui.goal.value = String(settings.goal);
 
@@ -283,9 +290,9 @@ function render(): void {
   ui.noteUp.disabled = busy || settings.targetMidi >= range.high;
   ui.next.textContent =
     settings.targetMidi >= range.high
-      ? `Recommencer depuis le ${noteName(range.low).fr}`
-      : `Note suivante (${noteName(settings.targetMidi + 1).fr})`;
-  ui.listen.disabled = referencePlaying || mode === 'test-low' || mode === 'test-high';
+      ? `Recommencer depuis le ${noteName(range.low).solfege}`
+      : `Note suivante (${noteName(settings.targetMidi + 1).solfege})`;
+  ui.listen.disabled = referencePlaying || isTesting();
   ui.start.textContent = busy ? 'Arrêter' : 'Commencer';
   ui.start.classList.toggle('danger', busy);
 
@@ -298,22 +305,22 @@ function render(): void {
   }
 
   const goal = exercise?.goalSeconds ?? settings.goal;
-  const done = exercise?.inTuneTime ?? 0;
-  ui.progressBar.style.width = `${Math.min(100, (done / goal) * 100)}%`;
-  ui.progressText.textContent = `${fmt(done)} / ${goal} s`;
+  const inTuneTime = exercise?.inTuneTime ?? 0;
+  ui.progressBar.style.width = `${Math.min(100, (inTuneTime / goal) * 100)}%`;
+  ui.progressText.textContent = `${formatNumber(inTuneTime)} / ${goal} s`;
 
   ui.result.hidden = mode !== 'done';
   if (mode === 'done' && exercise) {
-    setHint(`🎉 Bravo ! Tu as tenu le ${target.fr} pendant ${goal} secondes.`, 'good');
+    setHint(`🎉 Bravo ! Tu as tenu le ${target.solfege} pendant ${goal} secondes.`, 'good');
     ui.resultTitle.textContent = resultMessage(exercise.accuracy);
     ui.statAccuracy.textContent = `${Math.round(exercise.accuracy * 100)} %`;
     ui.statDeviation.textContent = `${Math.round(exercise.meanDeviation)} cents`;
-    ui.statStreak.textContent = `${fmt(exercise.bestStreak)} s`;
+    ui.statStreak.textContent = `${formatNumber(exercise.bestStreak)} s`;
   }
 }
 
 function renderLive(freq: number | null, cents: number | null, levelDb: number): void {
-  // Niveau micro : -60 dB → vide, -10 dB → plein.
+  // Microphone level: -60 dB → empty, -10 dB → full.
   const level = Math.max(0, Math.min(1, (levelDb + 60) / 50));
   ui.micBar.style.width = `${level * 100}%`;
 
@@ -324,12 +331,12 @@ function renderLive(freq: number | null, cents: number | null, levelDb: number):
     if (mode === 'singing' && !referencePlaying) setHint('Chante la note sur « aaa »…');
   } else {
     const sung = noteName(freqToMidi(freq));
-    const testing = mode === 'test-low' || mode === 'test-high';
+    const testing = isTesting();
     const rawCents = centsFromTarget(freq, settings.targetMidi, false);
     const otherOctave = !testing && Math.abs(rawCents - cents) >= 600;
-    ui.sungNote.textContent = `${sung.fr} ${sung.sci}${otherOctave ? ' (autre octave)' : ''}`;
+    ui.sungNote.textContent = `${sung.solfege} ${sung.scientific}${otherOctave ? ' (autre octave)' : ''}`;
 
-    // Pendant le test, l'écart à la cible n'a pas de sens.
+    // During the range test, the distance to the target is meaningless.
     const inTune = Math.abs(cents) <= settings.tolerance;
     ui.cents.textContent = testing ? '' : `${cents > 0 ? '+' : ''}${Math.round(cents)} cents`;
     ui.cents.className = `cents ${inTune ? 'good' : 'off'}`;
@@ -338,9 +345,9 @@ function renderLive(freq: number | null, cents: number | null, levelDb: number):
 
   if (mode === 'singing' && exercise) {
     ui.progressBar.style.width = `${exercise.progress * 100}%`;
-    ui.progressText.textContent = `${fmt(exercise.inTuneTime)} / ${exercise.goalSeconds} s`;
+    ui.progressText.textContent = `${formatNumber(exercise.inTuneTime)} / ${exercise.goalSeconds} s`;
   }
-  if (mode === 'test-low' || mode === 'test-high') {
+  if (isTesting()) {
     ui.progressBar.style.width = `${(testSamples.length / TEST_SAMPLES) * 100}%`;
     ui.progressText.textContent = mode === 'test-low' ? 'Étape 1/2' : 'Étape 2/2';
   }
@@ -365,7 +372,7 @@ function setHint(text: string, tone: 'good' | 'off' | 'warn' | '' = ''): void {
   ui.hint.className = `hint ${tone}`;
 }
 
-// ---------- Événements ----------
+// ---------- Events ----------
 
 ui.voice.addEventListener('change', () => {
   settings.voice = ui.voice.value;

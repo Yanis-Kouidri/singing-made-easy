@@ -1,13 +1,13 @@
-// Notes et fréquences. On travaille en numéros MIDI (69 = La 440 Hz)
-// car un demi-ton = 1, ce qui rend les calculs d'écart très simples.
+// Notes and frequencies. We work with MIDI note numbers (69 = A 440 Hz)
+// because one semitone = 1, which keeps interval maths trivial.
 
 const A4_FREQ = 440;
 const A4_MIDI = 69;
 
-const NAMES_FR = ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
-const NAMES_EN = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const SOLFEGE_NAMES = ['Do', 'Do♯', 'Ré', 'Ré♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
+const LETTER_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 
-/** Plage de notes proposée : C2 (65 Hz) à C6 (1046 Hz). */
+/** Supported note range: C2 (65 Hz) to C6 (1046 Hz). */
 export const MIN_MIDI = 36;
 export const MAX_MIDI = 84;
 
@@ -20,25 +20,29 @@ export function freqToMidi(freq: number): number {
 }
 
 export interface NoteName {
-  /** Nom en solfège, sans octave : « Sol♯ ». */
-  fr: string;
-  /** Notation scientifique avec octave : « G♯3 ». */
-  sci: string;
+  /** Solfège name without octave, as shown in the UI: "Sol♯". */
+  solfege: string;
+  /** Scientific pitch notation with octave: "G♯3". */
+  scientific: string;
 }
 
 export function noteName(midi: number): NoteName {
   const m = Math.round(midi);
-  const pc = ((m % 12) + 12) % 12;
-  const octave = Math.floor(m / 12) - 1;
-  return { fr: NAMES_FR[pc], sci: `${NAMES_EN[pc]}${octave}` };
+  const pitchClass = ((m % 12) + 12) % 12;
+  return { solfege: SOLFEGE_NAMES[pitchClass], scientific: `${LETTER_NAMES[pitchClass]}${octaveOf(m)}` };
+}
+
+/** Octave number in scientific pitch notation (middle C = C4). */
+export function octaveOf(midi: number): number {
+  return Math.floor(Math.round(midi) / 12) - 1;
 }
 
 /**
- * Écart en cents entre une fréquence chantée et la note cible.
- * 100 cents = 1 demi-ton. Positif = trop haut, négatif = trop bas.
+ * Distance in cents between a sung frequency and the target note.
+ * 100 cents = 1 semitone. Positive = sharp, negative = flat.
  *
- * Avec `foldOctaves`, une note juste mais à une autre octave compte
- * comme juste : l'écart est ramené dans [-600, 600[.
+ * With `foldOctaves`, a correct note in another octave counts as in tune:
+ * the result is folded into [-600, 600).
  */
 export function centsFromTarget(freq: number, targetMidi: number, foldOctaves: boolean): number {
   const cents = (freqToMidi(freq) - targetMidi) * 100;

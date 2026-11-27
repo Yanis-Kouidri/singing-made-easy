@@ -1,15 +1,14 @@
 /**
- * Exercice « tenir une note » : on accumule le temps passé dans la
- * tolérance jusqu'à atteindre l'objectif. Sortir de la cible met la
- * progression en pause sans la remettre à zéro (plus encourageant
- * pour débuter).
+ * "Hold a note" exercise: time spent within tolerance accumulates until
+ * the goal is reached. Drifting out of tune pauses progress without
+ * resetting it, which is more encouraging for beginners.
  */
 export class HoldExercise {
-  /** Secondes passées dans la tolérance. */
+  /** Seconds spent within tolerance. */
   inTuneTime = 0;
-  /** Secondes pendant lesquelles une note était chantée. */
+  /** Seconds during which a note was being sung. */
   voicedTime = 0;
-  /** Plus longue durée tenue d'affilée dans la tolérance. */
+  /** Longest uninterrupted time within tolerance. */
   bestStreak = 0;
 
   private streak = 0;
@@ -25,8 +24,8 @@ export class HoldExercise {
   }
 
   /**
-   * @param dt secondes écoulées depuis la dernière mesure
-   * @param cents écart à la cible, ou null si rien n'est chanté
+   * @param dt seconds elapsed since the previous reading
+   * @param cents distance to the target, or null when nothing is sung
    */
   update(dt: number, cents: number | null): void {
     if (this.done) return;
@@ -56,12 +55,12 @@ export class HoldExercise {
     return this.inTuneTime >= this.goalSeconds;
   }
 
-  /** Part du temps chanté passée dans la cible (0–1). */
+  /** Share of sung time spent in tune (0–1). */
   get accuracy(): number {
     return this.voicedTime > 0 ? this.inTuneTime / this.voicedTime : 0;
   }
 
-  /** Écart moyen absolu en cents. */
+  /** Mean absolute deviation in cents. */
   get meanDeviation(): number {
     return this.samples > 0 ? this.absCentsSum / this.samples : 0;
   }

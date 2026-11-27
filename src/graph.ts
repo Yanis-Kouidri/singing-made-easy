@@ -5,15 +5,15 @@ interface Point {
   cents: number | null;
 }
 
-/** Durée d'historique affichée, en secondes. */
+/** Length of the visible history, in seconds. */
 const WINDOW_SECONDS = 6;
-/** Amplitude verticale : ±3 demi-tons autour de la cible. */
+/** Vertical span: ±3 semitones around the target. */
 const RANGE_CENTS = 300;
 
 /**
- * Graphique défilant : la cible est la ligne du milieu, la voix est
- * une courbe qui avance de droite à gauche. On voit tout de suite si
- * l'on est au-dessus ou en dessous, et dans quel sens corriger.
+ * Scrolling chart: the target is the middle line and the voice is a
+ * curve moving right to left. The singer can see at a glance whether
+ * they are above or below, and which way to correct.
  */
 export class PitchGraph {
   private readonly canvas: HTMLCanvasElement;
@@ -52,12 +52,11 @@ export class PitchGraph {
 
     ctx.clearRect(0, 0, w, h);
 
-    // Zone de tolérance.
+    // Tolerance band.
     ctx.fillStyle = colors.band;
     ctx.fillRect(labelWidth, y(toleranceCents), plotW, y(-toleranceCents) - y(toleranceCents));
 
-    // Une ligne par demi-ton, avec le nom de la note.
-    ctx.font = '12px system-ui, sans-serif';
+    // One line per semitone, labelled with the note name.
     ctx.textBaseline = 'middle';
     for (let st = -3; st <= 3; st++) {
       const yy = Math.round(y(st * 100)) + 0.5;
@@ -71,10 +70,10 @@ export class PitchGraph {
 
       ctx.fillStyle = isTarget ? colors.target : colors.muted;
       ctx.font = `${isTarget ? 600 : 400} 12px system-ui, sans-serif`;
-      ctx.fillText(noteName(targetMidi + st).fr, 6, yy);
+      ctx.fillText(noteName(targetMidi + st).solfege, 6, yy);
     }
 
-    // Courbe de la voix, coupée pendant les silences.
+    // Voice curve, broken during silences.
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -84,16 +83,15 @@ export class PitchGraph {
         prev = p;
         continue;
       }
-      const c = clamp(p.cents);
       ctx.strokeStyle = Math.abs(p.cents) <= toleranceCents ? colors.good : colors.off;
       ctx.beginPath();
       ctx.moveTo(x(prev.t), y(clamp(prev.cents)));
-      ctx.lineTo(x(p.t), y(c));
+      ctx.lineTo(x(p.t), y(clamp(p.cents)));
       ctx.stroke();
       prev = p;
     }
 
-    // Point « où je suis maintenant ».
+    // "Where I am now" dot.
     const last = this.points.at(-1);
     if (last && last.cents !== null && now - last.t < 0.2) {
       ctx.fillStyle = Math.abs(last.cents) <= toleranceCents ? colors.good : colors.off;
@@ -116,8 +114,8 @@ function clamp(cents: number): number {
 }
 
 function readColors() {
-  const s = getComputedStyle(document.documentElement);
-  const v = (name: string) => s.getPropertyValue(name).trim();
+  const style = getComputedStyle(document.documentElement);
+  const v = (name: string) => style.getPropertyValue(name).trim();
   return {
     grid: v('--grid'),
     muted: v('--text-muted'),

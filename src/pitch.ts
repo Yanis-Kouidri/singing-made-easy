@@ -1,38 +1,37 @@
 import { PitchDetector } from 'pitchy';
 
-/** Ce que le micro entend à un instant donné. */
+/** What the microphone hears at a given moment. */
 export interface PitchReading {
-  /** Fréquence lissée en Hz, ou null si aucune note claire n'est chantée. */
+  /** Smoothed frequency in Hz, or null when no clear note is being sung. */
   freq: number | null;
-  /** Niveau sonore en dB (0 = maximum), pour l'indicateur de micro. */
+  /** Signal level in dB (0 = maximum), for the microphone meter. */
   levelDb: number;
 }
 
-// Fenêtre d'analyse : 2048 échantillons ≈ 43 ms à 48 kHz, assez pour
-// capter des voix graves (~65 Hz) tout en restant réactif.
+// Analysis window: 2048 samples ≈ 43 ms at 48 kHz, long enough for low
+// voices (~65 Hz) while staying responsive.
 const WINDOW_SIZE = 2048;
-// En dessous de cette « clarté » (0–1), le son est jugé trop bruité.
+// Below this clarity (0–1), the sound is considered too noisy.
 const MIN_CLARITY = 0.9;
-// Silence en dessous de ce niveau.
+// Silence below this level.
 const MIN_LEVEL_DB = -50;
-// Fréquences plausibles pour une voix humaine.
+// Plausible frequencies for a human voice.
 const MIN_FREQ = 60;
 const MAX_FREQ = 1400;
-// Lissage : médiane des dernières mesures valides.
+// Smoothing: median of the latest valid readings.
 const MEDIAN_SIZE = 5;
-// Nombre de mesures invalides d'affilée avant de considérer la note finie.
+// Consecutive invalid readings before the note is considered over.
 const MAX_MISSES = 4;
 
 /**
- * Écoute le micro et estime la hauteur de la voix avec l'algorithme
- * McLeod (bibliothèque pitchy). À appeler une fois par image (`read`).
+ * Listens to the microphone and estimates the pitch of the voice with
+ * the McLeod Pitch Method (pitchy library). Call `read` once per frame.
  */
 export class PitchTracker {
   private readonly buffer = new Float32Array(WINDOW_SIZE);
   private readonly detector = PitchDetector.forFloat32Array(WINDOW_SIZE);
   private readonly recent: number[] = [];
   private misses = 0;
-
   private readonly ctx: AudioContext;
   private readonly stream: MediaStream;
   private readonly analyser: AnalyserNode;
@@ -46,8 +45,8 @@ export class PitchTracker {
   }
 
   static async create(ctx: AudioContext): Promise<PitchTracker> {
-    // On désactive les traitements du navigateur : ils sont pensés pour
-    // la parole en visio et déforment le signal d'une voix chantée.
+    // Browser processing is tuned for speech in video calls and distorts
+    // a singing voice, so we turn it off.
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });

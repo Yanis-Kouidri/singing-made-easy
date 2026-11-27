@@ -1,7 +1,7 @@
 /**
- * Joue une note de référence, avec un son doux (onde triangle filtrée)
- * plus agréable et plus facile à imiter qu'une sinusoïde pure.
- * La promesse se résout quand la note est terminée.
+ * Plays a reference note with a soft timbre (filtered triangle wave),
+ * more pleasant and easier to imitate than a pure sine wave.
+ * The promise resolves when the note has finished.
  */
 export function playNote(ctx: AudioContext, freq: number, duration = 1.6): Promise<void> {
   const now = ctx.currentTime;
